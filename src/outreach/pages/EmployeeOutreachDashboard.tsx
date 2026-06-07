@@ -284,4 +284,88 @@ export function EmployeeOutreachDashboard({ section, search }: EmployeeOutreachD
       )}
 
       {section === "campaigns" && (
-        <div className="grid gap-4 xl:grid-cols-[1fr_360px]"><Card className="overflow-hidden shadow-none"><table className="w-full text-left text-sm"><thead className="border-b bg-slate-50 text-xs uppercase text-slate-500"><tr>{["Campaign", "Segment", "Status", "Sent", "Responses", "Meetings", "Rates"].map((heading) => <th key={heading} className="px-4 py-3">{heading}</th>)}</tr></thead><tbody className="divide-y">{campaigns.map((campaign) => <tr key={campaign.id}><td className="px-4 py-3 font-semibold">{campaign.name}</td><td className="px-4 py-3">{campaign.segment}</td><td className="px-4 py-3"><Badge>{campaign.status}</Badge></td><td className="px-4 py-3">{campaign.messagesSent}</td><td className="px-4 py-3">{campaign.responses}</td><td className="px-4 py-3">{campaign.meetingsBooked}</td><td className="px-4 py-3">{campaign.responseRate}% / {campaign.meetingRate}%</td></tr>)}</tbody></table></Card><Card className="p-4"><h3 className="font-semibold">Campaign builder</h3><div className="mt-4 space-y-3"><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>Staffing companies</option><option>HR leaders</option><option>Universities</option></select><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>Staffing company founder intro</option><option>Technical recruiter feedback</option></select><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>Day 1, Day 4, Day 10</option></
+        <div className="grid gap-4 xl:grid-cols-[1fr_360px]"><Card className="overflow-hidden shadow-none"><table className="w-full text-left text-sm"><thead className="border-b bg-slate-50 text-xs uppercase text-slate-500"><tr>{["Campaign", "Segment", "Status", "Sent", "Responses", "Meetings", "Rates"].map((heading) => <th key={heading} className="px-4 py-3">{heading}</th>)}</tr></thead><tbody className="divide-y">{campaigns.map((campaign) => <tr key={campaign.id}><td className="px-4 py-3 font-semibold">{campaign.name}</td><td className="px-4 py-3">{campaign.segment}</td><td className="px-4 py-3"><Badge>{campaign.status}</Badge></td><td className="px-4 py-3">{campaign.messagesSent}</td><td className="px-4 py-3">{campaign.responses}</td><td className="px-4 py-3">{campaign.meetingsBooked}</td><td className="px-4 py-3">{campaign.responseRate}% / {campaign.meetingRate}%</td></tr>)}</tbody></table></Card><Card className="p-4"><h3 className="font-semibold">Campaign builder</h3><div className="mt-4 space-y-3"><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>Staffing companies</option><option>HR leaders</option><option>Universities</option></select><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>Staffing company founder intro</option><option>Technical recruiter feedback</option></select><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>Day 1, Day 4, Day 10</option></select><Button className="w-full">Create mock campaign</Button></div></Card></div>
+      )}
+
+      {section === "tasks" && (
+        <div className="grid gap-4 xl:grid-cols-4">{["Open", "In Progress", "Completed", "Snoozed"].map((status) => <Card key={status} className="p-3 shadow-none"><h3 className="mb-3 text-sm font-semibold">{status}</h3><div className="space-y-3">{tasks.filter((task) => task.status === status).slice(0, 8).map((task) => <Card key={task.id} className="p-3 shadow-none"><div className="flex items-center justify-between"><p className="font-semibold">{task.type}</p><Badge tone={priorityTone(task.priority)}>{task.priority}</Badge></div><p className="mt-2 text-sm text-slate-600">{task.title}</p><p className="mt-2 text-xs text-slate-500">Due {task.dueDate} · {task.owner}</p>{task.status !== "Completed" && <Button className="mt-3 w-full" size="sm" variant="outline" onClick={() => completeTask(task.id)}>Mark done</Button>}</Card>)}</div></Card>)}</div>
+      )}
+
+      {section === "research" && (
+        <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+          <div className="space-y-4">
+            <Card className="p-4 shadow-none">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="font-semibold">CSV sourcing import</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">Paste real staffing-company data from a spreadsheet, Apollo, Clay, manual research, or a CRM export. Rows with contacts create contacts; rows without contacts create research tasks.</p>
+                </div>
+                <Badge tone="green">Real data in</Badge>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-[240px_1fr]">
+                <label className="space-y-1.5">
+                  <span className="text-xs font-medium text-slate-500">Source name</span>
+                  <input className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" value={sourceName} onChange={(event) => setSourceName(event.target.value)} />
+                </label>
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">Supported headers: company, website, location, contact first name, contact last name, title, email, linkedin, specialties, pain point, notes.</div>
+              </div>
+              <textarea id="sourcing-csv" className="mt-3 min-h-48 w-full rounded-md border border-slate-200 p-3 font-mono text-xs leading-5 outline-none focus:border-slate-400" value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder={"company,website,location,contact first name,contact last name,title,email,specialties,pain point\nYour Staffing Co,https://company.com,New York NY,Jane,Doe,Founder,jane@company.com,Data Engineering;AWS,Client-ready contractor shortlists"} />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button onClick={importCsv}><Upload className="h-4 w-4" /> Import CSV</Button>
+                <Button variant="outline" onClick={() => setCsvText("")}>Clear</Button>
+              </div>
+            </Card>
+
+            <Card className="p-4 shadow-none">
+              <h3 className="font-semibold">Manual research queue</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-600">Paste company names when you do not have verified contacts yet. Clario will create accounts and research tasks, not invented people.</p>
+              <textarea className="mt-3 min-h-32 w-full rounded-md border border-slate-200 p-3 text-sm leading-6 outline-none focus:border-slate-400" value={companyQueue} onChange={(event) => setCompanyQueue(event.target.value)} placeholder={"Paste one real staffing company per line\nCompany name\nAnother staffing company"} />
+              <Button className="mt-3" variant="outline" onClick={queueCompaniesForResearch}>Queue research tasks</Button>
+            </Card>
+          </div>
+
+          <aside className="space-y-4">
+            <Card className="border-slate-200 bg-slate-50 p-4 shadow-none">
+              <h3 className="font-semibold">Pipeline status</h3>
+              <div className="mt-3 space-y-3">
+                {sourcingRuns.slice(0, 5).map((run) => (
+                  <div key={run.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-slate-950">{run.sourceName}</p>
+                      <Badge>{run.status}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">{run.type} · {new Date(run.createdAt).toLocaleString()}</p>
+                    <p className="mt-2 text-xs leading-5 text-slate-600">{run.accountsCreated} created, {run.accountsUpdated} updated, {run.contactsCreated} contacts, {run.tasksCreated} tasks.</p>
+                  </div>
+                ))}
+                {!sourcingRuns.length && <p className="text-sm leading-6 text-slate-600">No sourcing runs yet.</p>}
+              </div>
+            </Card>
+            <Card className="border-slate-200 bg-slate-50 p-4 shadow-none">
+              <h3 className="font-semibold">Enrichment connectors</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">The backend is ready for CSV/manual sourcing today. Apollo, Hunter, People Data Labs, or Clay can be added once API keys are configured.</p>
+            </Card>
+            <Card className="border-slate-200 bg-slate-50 p-4 shadow-none">
+              <h3 className="font-semibold">Compliance note</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Only import contacts you are allowed to use for B2B outreach. The app logs drafts and follow-ups, but it does not send email without your explicit action.</p>
+            </Card>
+          </aside>
+        </div>
+      )}
+
+      {section === "messages" && (
+        <div className="grid gap-4 lg:grid-cols-[1fr_420px]"><div className="grid gap-4 md:grid-cols-2">{messageTemplates.map((template) => <Card key={template.id} className="p-4 shadow-none"><div className="flex items-start justify-between"><h3 className="font-semibold">{template.title}</h3><Badge>{template.channel}</Badge></div><p className="mt-2 text-xs text-slate-500">{template.category} · {template.responseRate}% response</p><p className="mt-3 text-sm leading-6 text-slate-600">{template.body}</p></Card>)}</div><Card className="p-4"><h3 className="font-semibold">Message composer</h3><div className="mt-4 space-y-3"><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value={selectedComposerContactId} onChange={(event) => setSelectedComposerContactId(event.target.value)}>{contacts.slice(0, 40).map((contact) => <option key={contact.id} value={contact.id}>{contact.firstName} {contact.lastName}</option>)}</select><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">{pitchAngles.map((angle) => <option key={angle}>{angle}</option>)}</select><textarea className="min-h-40 w-full rounded-md border border-slate-200 p-3 text-sm" value={draftMessage} onChange={(event) => setDraftMessage(event.target.value)} /><div className="grid gap-2 sm:grid-cols-2"><Button onClick={() => draftAndLogOutreach(selectedComposerContactId, "Email")}><Mail className="h-4 w-4" /> Draft email</Button><Button variant="outline" onClick={() => draftAndLogOutreach(selectedComposerContactId, "LinkedIn")}><MessageSquare className="h-4 w-4" /> Log LinkedIn</Button><Button variant="outline" onClick={() => draftAndLogOutreach(selectedComposerContactId, "Follow-up")}>Follow-up</Button><Button variant="outline" onClick={() => setDraftMessage(generateMeetingRequest(contacts.find((contact) => contact.id === selectedComposerContactId) ?? contacts[0], accounts.find((account) => account.id === (contacts.find((contact) => contact.id === selectedComposerContactId) ?? contacts[0])?.accountId) ?? accounts[0]))}>Meeting</Button></div></div></Card></div>
+      )}
+
+      {section === "outreach-analytics" && (
+        <div className="grid gap-4 xl:grid-cols-2"><Card className="p-4"><h3 className="mb-4 text-sm font-semibold">Contacts by role</h3><div className="h-72"><ResponsiveContainer width="100%" height="100%"><BarChart data={roleData}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="role" tick={{ fontSize: 10 }} /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="value" fill="#111827" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></Card><Card className="p-4"><h3 className="mb-4 text-sm font-semibold">Response rate by campaign</h3><div className="h-72"><ResponsiveContainer width="100%" height="100%"><BarChart data={campaigns}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="segment" tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Bar dataKey="responseRate" fill="#6b7280" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div></Card></div>
+      )}
+
+      {section === "outreach-settings" && (
+        <div className="grid gap-4 lg:grid-cols-3"><Card className="p-4"><Building2 className="h-5 w-5 text-slate-500" /><h3 className="mt-3 font-semibold">CSV import</h3><p className="mt-2 text-sm leading-6 text-slate-600">Upload accounts, contacts, campaign membership, and CRM exports.</p><Button className="mt-4 w-full" variant="outline">Import CSV</Button></Card><Card className="p-4"><CalendarCheck className="h-5 w-5 text-slate-500" /><h3 className="mt-3 font-semibold">Follow-up rules</h3><p className="mt-2 text-sm leading-6 text-slate-600">Default cadence: day 1, day 4, day 10, day 21.</p><Button className="mt-4 w-full" variant="outline">Edit cadence</Button></Card><Card className="p-4"><Download className="h-5 w-5 text-slate-500" /><h3 className="mt-3 font-semibold">Export</h3><p className="mt-2 text-sm leading-6 text-slate-600">Export filtered accounts, contacts, tasks, and campaign results.</p><Button className="mt-4 w-full" variant="outline">Export CSV</Button></Card></div>
+      )}
+
+      <AccountDrawer account={selectedAccount} contacts={contacts} onClose={() => setSelectedAccount(null)} onCreateTask={(account) => window.alert(`Task queue is connected. Use Lead Queue to reach out to ${account.name}.`)} onDraftEmail={(account) => { const contact = contacts.find((item) => item.accountId === account.id); if (contact) draftAndLogOutreach(contact.id, "Email"); }} />
+    </div>
+  );
+}

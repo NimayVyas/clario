@@ -3,4 +3,10 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react],
-  en
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+  server: {
+    proxy: {
+      "/api": "http://localhost:3001",
+    },
+  },
+});

@@ -35,4 +35,8 @@ export function Sidebar({ activeRoute, homeRoute, routes, onRouteChange }: Sideb
         })}
       </nav>
       <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-        Role-based workspace access keeps candidate, recruiter, and Clario operations tools separa
+        Role-based workspace access keeps candidate, recruiter, and Clario operations tools separate.
+      </div>
+    </aside>
+  );
+}
