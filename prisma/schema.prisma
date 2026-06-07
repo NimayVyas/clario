@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole { ADMIN EMPLOYEE }
+enum SourceType { COMPANY_CAREER_PAGE STAFFING_SITE JOB_BOARD PROCUREMENT_PORTAL MANUAL_UPLOAD RSS API CSV_IMPORT }
+enum RemoteType { REMOTE HYBRID ONSITE UNKNOWN }
+enum EmploymentType { CONTRACT CONTRACT_TO_HIRE FULL_TIME UNKNOWN }
+enum JobStatus { NEW REVIEWED QUEUED_FOR_OUTREACH CONTACTED IN_CONVERSATION PARTNERED REJECTED ARCHIVED }
+enum LeadStatus { NEW RESEARCHED QUEUED CONTACTED RESPONDED CALL_BOOKED PARTNERED NOT_A_FIT }
+enum LeadType { STAFFING_COMPANY DIRECT_EMPLOYER ROLE_SPECIFIC }
+enum TaskType { COLD_EMAIL COLD_CALL LINKEDIN_MANUAL DEMO_PREP FOLLOW_UP RESEARCH }
+enum Priority { LOW MEDIUM HIGH URGENT }
+enum TaskStatus { TODO IN_PROGRESS DONE SNOOZED CANCELLED CONTACTED FOLLOW_UP_NEEDED CALL_BOOKED PARTNERED NOT_A_FIT }
+enum CrawlStatus { SUCCESS FAILED PARTIAL }
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      UserRole @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  tasks     OutreachTask[]
+}
+
+model JobRole {
+  id                  String         @id @default(cuid())
+  title               String
+  companyName         String
+  companyWebsite      String?
+  jobUrl              String
+  sourceName          String
+  sourceType          SourceType
+  location            String?
+  remoteType          RemoteType     @default(UNKNOWN)
+  employmentType      EmploymentType @default(UNKNOWN)
+  duration            String?
+  payRateMin          Int?
+  payRateMax          Int?
+  billRateEstimate    Int?
+  description         String
+  requiredSkills      String[]
+  preferredSkills     String[]
+  seniority           String?
+  industry            String?
+  postedDate          DateTime?
+  discoveredAt        DateTime       @default(now())
+  lastSeenAt          DateTime       @default(now())
+  status              JobStatus      @default(NEW)
+  roleDifficultyScore Int            @default(0)
+  partnershipScore    Int            @default(0)
+  urgencyScore        Int            @default(0)
+  duplicateGroupId    String?
+  notes               String?
+}
+
+model Company {
+  id                     String   @id @default(cuid())
+  name                   String
+  website                String?
+  domain                 String?
+  industry               String?
+  sizeEstimate           String?
+  headquarters           String?
+  linkedinUrl            String?
+  careersUrl             String?
+  contactPageUrl         String?
+  procurementUrl         String?
+  vendorPageUrl          String?
+  isStaffingCompany      Boolean  @default(false)
+  isDirectEmployer       Boolean  @default(false)
+  isGovernmentContractor Boolean  @default(false)
+  knownVmsOrMsp          String?
+  notes                  String?
+  partnershipFitScore    Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model StaffingCompanyLead {
+  id                 String     @id @default(cuid())
+  companyId          String?
+  companyName        String
+  website            String?
+  specialization     String?
+  locations          String[]
+  targetRoles        String[]
+  publicContactPage  String?
+  publicPhone        String?
+  publicGenericEmail String?
+  partnershipAngle   String
+  leadScore          Int        @default(0)
+  status             LeadStatus @default(NEW)
+  lastContactedAt    DateTime?
+  nextFollowUpAt     DateTime?
+  notes              String?
+}
+
+model DirectPartnershipLead {
+  id                     String     @id @default(cuid())
+  companyId              String?
+  companyName            String
+  website                String?
+  openContractRolesCount Int        @default(0)
+  targetDepartments      String[]
+  vendorPageUrl          String?
+  procurementPageUrl     String?
+  contactPageUrl         String?
+  likelyPainPoint        String
+  partnershipAngle       String
+  leadScore              Int        @default(0)
+  status                 LeadStatus @default(NEW)
+  lastContactedAt        DateTime?
+  nextFollowUpAt         DateTime?
+  notes                  String?
+}
+
+model OutreachTask {
+  id                      String     @id @default(cuid())
+  leadType                LeadType
+  relatedJobRoleId        String?
+  relatedCompanyId        String?
+  staffingCompanyLeadId   String?
+  directPartnershipLeadId String?
+  taskType                TaskType
+  priority                Priority   @default(MEDIUM)
+  status                  TaskStatus @default(TODO)
+  assignedToUserId        String?
+  assignedTo              User?      @relation(fields: [assignedToUserId], references: [id])
+  dueDate                 DateTime?
+  callScript              String?
+  emailDraft              String?
+  demoNotes               String?
+  researchSummary         String?
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+}
+
+model Source {
+  id                  String     @id @default(cuid())
+  name                String
+  url                 String
+  type                SourceType
+  enabled             Boolean    @default(true)
+  crawlFrequencyHours Int        @default(24)
+  lastRunAt           DateTime?
+  lastRunStatus       String?
+  notes               String?
+  crawlRuns           CrawlRun[]
+}
+
+model CrawlRun {
+  id            String      @id @default(cuid())
+  sourceId      String
+  source        Source      @relation(fields: [sourceId], references: [id])
+  startedAt     DateTime    @default(now())
+  finishedAt    DateTime?
+  status        CrawlStatus
+  rolesFound    Int         @default(0)
+  rolesCreated  Int         @default(0)
+  rolesUpdated  Int         @default(0)
+  errorMessage  String?
+}
