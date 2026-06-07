@@ -129,8 +129,4 @@ export async function fetchAshbyJobs(boardName) {
 
 export async function runConnector({ provider, identifier }) {
   if (!identifier || !/^[a-zA-Z0-9_.-]+$/.test(identifier)) throw new Error("Use a valid public board token or company slug.");
-  if (provider === "greenhouse") return fetchGreenhouseJobs(identifier);
-  if (provider === "lever") return fetchLeverJobs(identifier);
-  if (provider === "ashby") return fetchAshbyJobs(identifier);
-  throw new Error("Unsupported connector provider.");
-}
+  if (provider === "greenh

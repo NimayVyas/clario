@@ -21,8 +21,4 @@ export function AppShell({ activeRoute, homeRoute, routes, search, onSearchChang
       <Sidebar activeRoute={activeRoute} homeRoute={homeRoute} routes={routes} onRouteChange={onRouteChange} />
       <div className="min-w-0 flex-1">
         <Topbar activeRoute={activeRoute} homeRoute={homeRoute} routes={routes} search={search} onSearchChange={onSearchChange} onRouteChange={onRouteChange} onExport={onExport} onLogout={onLogout} />
-        <main className="px-4 py-6 lg:px-8">{children}</main>
-      </div>
-    </div>
-  );
-}
+        <main c

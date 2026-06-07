@@ -123,11 +123,4 @@ export function InternalIntelligenceDashboard({ search }: { search: string }) {
             <LiveSourceRunner onJobsFetched={(jobs) => setLiveJobs((current) => [...jobs, ...current.filter((job) => !job.id.startsWith("live-"))])} />
             {sources.map((source) => <Card key={source.id} className="p-4"><div className="flex items-start justify-between"><div><h3 className="font-semibold">{source.name}</h3><p className="mt-1 text-sm text-slate-500">{source.url}</p></div><StatusBadge status={source.lastRunStatus} /></div><p className="mt-3 text-sm text-slate-600">{source.notes}</p></Card>)}
           </div>
-          <Card className="p-4"><h3 className="font-semibold">Add source</h3><div className="mt-4 space-y-3"><input className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" placeholder="Source name" /><input className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" placeholder="Public URL, RSS, API, or CSV" /><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>COMPANY_CAREER_PAGE</option><option>STAFFING_SITE</option><option>RSS</option><option>API</option><option>CSV_IMPORT</option></select><Button className="w-full"><Plus className="h-4 w-4" /> Add compliant source</Button></div><div className="mt-5 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">CSV columns: title, companyName, jobUrl, location, employmentType, description, postedDate, sourceName.</div></Card>
-        </div>
-      )}
-
-      <RoleDetailPanel job={selectedJob} onClose={() => setSelectedJob(null)} />
-    </div>
-  );
-}
+          <Card className="p-4"><h3 className="font-semibold">Add source</h3><div className="mt-4 space-y-3"><input className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" placeholder="Source name" /><input className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" placeholder="Public URL, RSS, API, or CSV" /><select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"><option>COMPANY_CAREER_PAGE</option><option>STAFFING_SITE</option><option>RSS</option><option>API</option><option>CSV_IMPORT</option></select><Button className="w-full"><Plus classNam

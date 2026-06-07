@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
 const statePath = path.join(dataDir, "auth-state.json");
 let mutationQueue = Promise.resolve();
+
+loadLocalEnv();
 
 const seedUsers = [
   {
@@ -29,6 +32,35 @@ const seedUsers = [
 
 function hashPassword(password) {
   return crypto.createHash("sha256").update(`clario-demo:${password}`).digest("hex");
+}
+
+function loadLocalEnv() {
+  const envPath = path.join(__dirname, "..", ".env");
+  try {
+    const raw = readFileSync(envPath, "utf8");
+    raw.split(/\r?\n/).forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) return;
+      const separator = trimmed.indexOf("=");
+      if (separator === -1) return;
+      const key = trimmed.slice(0, separator).trim();
+      const value = trimmed.slice(separator + 1).trim().replace(/^["']|["']$/g, "");
+      if (key && !process.env[key]) process.env[key] = value;
+    });
+  } catch {
+    // The API can still run with local demo auth when no .env file exists.
+  }
+}
+
+function getSupabaseConfig() {
+  return {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "",
+    publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+  };
+}
+
+function validRole(role) {
+  return ["candidate", "employee", "recruiter"].includes(role) ? role : "candidate";
 }
 
 function publicUser(user) {
@@ -133,10 +165,15 @@ export async function getSession(token) {
   if (!token) throw new Error("Missing auth token.");
   const state = await readState();
   const session = (state.sessions || []).find((item) => item.token === token);
-  if (!session) throw new Error("Session not found.");
-  const user = (state.users || []).find((item) => item.id === session.userId);
-  if (!user) throw new Error("User not found.");
-  return { token: session.token, user: publicUser(user) };
+  if (session) {
+    const user = (state.users || []).find((item) => item.id === session.userId);
+    if (!user) throw new Error("User not found.");
+    return { token: session.token, user: publicUser(user) };
+  }
+
+  const supabaseSession = await getSupabaseSession(token);
+  if (supabaseSession) return supabaseSession;
+  throw new Error("Session not found.");
 }
 
 export async function logoutUser(token) {
@@ -145,4 +182,30 @@ export async function logoutUser(token) {
     state.sessions = (state.sessions || []).filter((session) => session.token !== token);
     return { ok: true };
   });
+}
+
+async function getSupabaseSession(token) {
+  const { url, publishableKey } = getSupabaseConfig();
+  if (!url || !publishableKey) return undefined;
+
+  const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: publishableKey,
+    },
+  });
+
+  if (!response.ok) return undefined;
+  const user = await response.json();
+  const role = validRole(user.user_metadata?.role || user.app_metadata?.role);
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email || "",
+      name: user.user_metadata?.name || user.email?.split("@")[0] || "Clario user",
+      role,
+      createdAt: user.created_at || new Date().toISOString(),
+    },
+  };
 }

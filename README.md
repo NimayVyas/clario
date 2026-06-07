@@ -40,6 +40,15 @@ Demo logins:
 - Recruiter: `recruiter@example.com` / `clario123`
 - Candidate: use any email/password and upload a TXT resume, or use the quick-start mock parser path.
 
+Supabase auth is enabled when these environment variables are present:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_replace_me"
+```
+
+The Vite config accepts both `NEXT_PUBLIC_` and `VITE_` public env prefixes.
+
 ## Pages Created
 
 ### Public / Candidate
@@ -196,21 +205,33 @@ The following need real infrastructure before launch:
 
 ## Current Auth Model
 
-The app has working role-based demo auth:
+The app now supports Supabase Auth plus the previous local demo auth fallback:
 
-- Candidate users can register locally.
-- Employee and recruiter users use seeded credentials.
+- Candidate users sign up through Supabase when Supabase env vars are configured.
+- Existing Supabase users can sign in as candidate, employee, or recruiter when their Supabase user metadata role matches the selected workspace.
+- Employee and recruiter demo users can still use seeded local credentials.
 - The frontend stores a bearer token in localStorage.
 - API requests send `Authorization: Bearer <token>`.
+- The local API accepts local demo tokens and can verify Supabase access tokens against the Supabase `/auth/v1/user` endpoint.
 - Employee-only APIs reject recruiter/candidate/no-token requests.
 
-This is intended to prove the product flow. For production, replace `server/authStore.mjs` and `src/services/authService.ts` with a managed auth provider and backend JWT verification.
+For production, create employee/recruiter users in Supabase and set user metadata like:
+
+```json
+{ "role": "employee" }
+```
+
+or:
+
+```json
+{ "role": "recruiter" }
+```
 
 ## Recommended Production Stack
 
-Recommended next stack:
+Recommended next production steps:
 
-- Supabase Auth for free production-level email/password auth
+- Supabase Auth for email/password auth, already wired at the app layer
 - Supabase Postgres for candidate, recruiter, application, and outreach tables
 - Supabase Storage for resumes
 - Row Level Security for candidate/recruiter/employee permissions

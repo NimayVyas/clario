@@ -47,19 +47,4 @@ export function Topbar({ activeRoute, homeRoute, routes, search, onSearchChange,
             <>
               <Button variant="outline"><Plus className="h-4 w-4" /> Add Account</Button>
               <Button variant="outline"><UserPlus className="h-4 w-4" /> Add Contact</Button>
-              <Button variant="outline"><Upload className="h-4 w-4" /> Import CSV</Button>
-              <Button className="bg-slate-950 text-white hover:bg-slate-800" onClick={onExport}><Download className="h-4 w-4" /> Export</Button>
-            </>
-          ) : (
-            <Button className="bg-[#ff6b4a] text-white hover:bg-[#f45d3c]" onClick={onExport}>
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          )}
-          <Button variant="outline" onClick={onLogout}>Log out</Button>
-          <div className="hidden h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700 lg:flex">NV</div>
-        </div>
-      </div>
-    </header>
-  );
-}
+              <Button variant="outline"><U

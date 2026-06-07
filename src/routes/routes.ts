@@ -37,33 +37,4 @@ export const candidateRoutes: NavigationRoute[] = [
 
 export const employeeRoutes: NavigationRoute[] = [
   { id: "employee" as const, label: "Dashboard", icon: LayoutDashboard },
-  { id: "outreach-accounts" as const, label: "Accounts", icon: Building2 },
-  { id: "outreach-contacts" as const, label: "Contacts", icon: Users },
-  { id: "outreach-lead-queue" as const, label: "Lead Queue", icon: Target },
-  { id: "outreach-campaigns" as const, label: "Campaigns", icon: Mail },
-  { id: "outreach-tasks" as const, label: "Tasks", icon: ClipboardList },
-  { id: "outreach-research" as const, label: "Research", icon: Search },
-  { id: "outreach-messages" as const, label: "Messages", icon: MessageSquare },
-  { id: "outreach-analytics" as const, label: "Analytics", icon: BarChart3 },
-  { id: "outreach-settings" as const, label: "Settings", icon: Settings },
-];
-
-export const recruiterRoutes: NavigationRoute[] = [
-  { id: "recruiter" as const, label: "Recruiter Portal", icon: UserRoundSearch },
-];
-
-export function getRoutesForRole(role: UserRole): NavigationRoute[] {
-  if (role === "employee") return employeeRoutes;
-  if (role === "recruiter") return recruiterRoutes;
-  return candidateRoutes;
-}
-
-export function getDefaultRouteForRole(role: UserRole): AppRoute {
-  if (role === "employee") return "employee";
-  if (role === "recruiter") return "recruiter";
-  return "matches";
-}
-
-export function isRouteAllowedForRole(route: AppRoute, role: UserRole): boolean {
-  return getRoutesForRole(role).some((item) => item.id === route);
-}
+  { id: "outreach-accounts" as c
