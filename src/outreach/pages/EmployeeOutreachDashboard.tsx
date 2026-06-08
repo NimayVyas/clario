@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Building2, CalendarCheck, Download, Mail, MessageSquare, Plus, Search, Upload, Users } from "lucide-react";
+import { Building2, CalendarCheck, CheckCircle2, Clock, Download, ExternalLink, Filter, Mail, MessageSquare, Phone, Plus, Search, Upload, UserRound, Users } from "lucide-react";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
-import { Account, accounts as fallbackAccounts, campaigns as fallbackCampaigns, contacts as fallbackContacts, messageTemplates as fallbackMessageTemplates, pitchAngles as fallbackPitchAngles, tasks as fallbackTasks } from "../data/outreachMock";
+import { Account, Contact, accounts as fallbackAccounts, campaigns as fallbackCampaigns, contacts as fallbackContacts, messageTemplates as fallbackMessageTemplates, pitchAngles as fallbackPitchAngles, tasks as fallbackTasks } from "../data/outreachMock";
 import { calculateContactPriority } from "../services/leadScoringService";
 import { generateEmailMessage, generateFollowUpMessage, generateLinkedInMessage, generateMeetingRequest } from "../services/messageGenerationService";
 import { createOutreachAccount, createOutreachContact, createResearchQueue, fetchOutreachState, fetchSourcingRuns, generateOutreachDraft, importSourcingCsv, logOutreachSend, SourcingRun, updateOutreachTask } from "../services/outreachApi";
@@ -113,10 +113,82 @@ function AccountDrawer({ account, contacts, onClose, onCreateTask, onDraftEmail 
   );
 }
 
+function ContactDrawer({ contact, account, onClose, onDraftEmail, onLogLinkedIn, onCreateFollowUp }: { contact: Contact | null; account?: Account; onClose: () => void; onDraftEmail: (contact: Contact) => void; onLogLinkedIn: (contact: Contact) => void; onCreateFollowUp: (contact: Contact) => void }) {
+  if (!contact || !account) return null;
+  const priority = calculateContactPriority(contact, account);
+  return (
+    <div className="fixed inset-0 z-50">
+      <button className="absolute inset-0 bg-slate-950/20" onClick={onClose} />
+      <section className="absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-2xl">
+        <div className="sticky top-0 flex items-start justify-between border-b border-slate-200 bg-white p-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contact detail</p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">{contact.firstName} {contact.lastName}</h2>
+            <p className="mt-1 text-sm text-slate-500">{contact.title} · {account.name}</p>
+          </div>
+          <Button variant="ghost" onClick={onClose}>Close</Button>
+        </div>
+        <div className="space-y-5 p-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Card className="p-3 shadow-none"><p className="text-xs text-slate-500">Priority</p><p className="mt-1"><Badge tone={priorityTone(priority)}>{priority}</Badge></p></Card>
+            <Card className="p-3 shadow-none"><p className="text-xs text-slate-500">Status</p><p className="mt-1 text-sm font-semibold">{contact.outreachStatus}</p></Card>
+            <Card className="p-3 shadow-none"><p className="text-xs text-slate-500">Next follow-up</p><p className="mt-1 text-sm font-semibold">{contact.nextFollowUpDate ?? "Not set"}</p></Card>
+          </div>
+
+          <section className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-slate-500">Email</p>
+              <p className="mt-1 break-all text-sm font-semibold text-slate-950">{contact.email || "Not listed"}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-slate-500">Phone</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">{contact.phone || "Not listed"}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-slate-500">Role</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">{contact.roleCategory} · {contact.seniority}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-slate-500">Location</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">{contact.location}</p>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-semibold">Recommended angle</h3>
+            <p className="mt-2 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700">{contact.bestPitchAngle}</p>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-semibold">Pain point hypothesis</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{contact.painPointHypothesis}</p>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-semibold">Notes</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{contact.notes}</p>
+          </section>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Button onClick={() => onDraftEmail(contact)}><Mail className="h-4 w-4" /> Draft email</Button>
+            <Button variant="outline" onClick={() => onLogLinkedIn(contact)}><MessageSquare className="h-4 w-4" /> Log LinkedIn</Button>
+            <Button variant="outline" onClick={() => onCreateFollowUp(contact)}><Clock className="h-4 w-4" /> Follow-up</Button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function EmployeeOutreachDashboard({ section, search }: EmployeeOutreachDashboardProps) {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [accountType, setAccountType] = useState("All");
   const [stage, setStage] = useState("All");
+  const [contactRole, setContactRole] = useState("All");
+  const [contactStatus, setContactStatus] = useState("All");
+  const [contactPriority, setContactPriority] = useState("All");
+  const [contactFollowUp, setContactFollowUp] = useState("All");
   const [accounts, setAccounts] = useState(fallbackAccounts);
   const [contacts, setContacts] = useState(fallbackContacts);
   const [campaigns, setCampaigns] = useState(fallbackCampaigns);
@@ -219,18 +291,44 @@ export function EmployeeOutreachDashboard({ section, search }: EmployeeOutreachD
 
   const filteredContacts = useMemo(() => contacts.filter((contact) => {
     const account = accounts.find((item) => item.id === contact.accountId);
-    return !query || [contact.firstName, contact.lastName, contact.title, contact.roleCategory, account?.name ?? ""].some((value) => value.toLowerCase().includes(query));
-  }), [query]);
+    const priority = account ? calculateContactPriority(contact, account) : "Low";
+    const today = "2026-06-07";
+    const matchesSearch = !query || [contact.firstName, contact.lastName, contact.title, contact.roleCategory, contact.email, contact.phone, contact.location, contact.bestPitchAngle, account?.name ?? "", account?.accountType ?? ""].some((value) => value.toLowerCase().includes(query));
+    const matchesRole = contactRole === "All" || contact.roleCategory === contactRole;
+    const matchesStatus = contactStatus === "All" || contact.outreachStatus === contactStatus;
+    const matchesPriority = contactPriority === "All" || priority === contactPriority;
+    const matchesFollowUp = contactFollowUp === "All"
+      || (contactFollowUp === "Due today" && contact.nextFollowUpDate === today)
+      || (contactFollowUp === "Overdue" && Boolean(contact.nextFollowUpDate && contact.nextFollowUpDate < today))
+      || (contactFollowUp === "Upcoming" && Boolean(contact.nextFollowUpDate && contact.nextFollowUpDate > today))
+      || (contactFollowUp === "No date" && !contact.nextFollowUpDate);
+    return matchesSearch && matchesRole && matchesStatus && matchesPriority && matchesFollowUp;
+  }).sort((a, b) => {
+    const accountA = accounts.find((item) => item.id === a.accountId);
+    const accountB = accounts.find((item) => item.id === b.accountId);
+    const scoreA = accountA?.fitScore ?? 0;
+    const scoreB = accountB?.fitScore ?? 0;
+    return scoreB - scoreA || `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+  }), [accounts, contactFollowUp, contactPriority, contactRole, contactStatus, contacts, query]);
 
   const leadQueue = useMemo(() => filteredContacts
     .map((contact) => ({ contact, account: accounts.find((account) => account.id === contact.accountId)! }))
     .filter((item) => item.account)
     .sort((a, b) => b.account.fitScore - a.account.fitScore)
-    .slice(0, 30), [filteredContacts]);
+    .slice(0, 30), [accounts, filteredContacts]);
 
   const accountTypeData = Object.entries(accounts.reduce<Record<string, number>>((acc, account) => ({ ...acc, [account.accountType]: (acc[account.accountType] ?? 0) + 1 }), {})).map(([name, value]) => ({ name, value }));
   const pipelineData = Object.entries(accounts.reduce<Record<string, number>>((acc, account) => ({ ...acc, [account.stage]: (acc[account.stage] ?? 0) + 1 }), {})).map(([stageName, value]) => ({ stageName, value }));
   const roleData = Object.entries(contacts.reduce<Record<string, number>>((acc, contact) => ({ ...acc, [contact.roleCategory]: (acc[contact.roleCategory] ?? 0) + 1 }), {})).map(([role, value]) => ({ role, value }));
+  const selectedContactAccount = selectedContact ? accounts.find((account) => account.id === selectedContact.accountId) : undefined;
+  const visibleContactPriorities = filteredContacts.map((contact) => {
+    const account = accounts.find((item) => item.id === contact.accountId);
+    return account ? calculateContactPriority(contact, account) : "Low";
+  });
+  const visibleStrategicContacts = visibleContactPriorities.filter((priority) => priority === "Strategic" || priority === "High").length;
+  const visibleUntouchedContacts = filteredContacts.filter((contact) => contact.outreachStatus === "Not Contacted").length;
+  const visibleDueContacts = filteredContacts.filter((contact) => contact.nextFollowUpDate && contact.nextFollowUpDate <= "2026-06-07").length;
+  const visibleContactAccounts = new Set(filteredContacts.map((contact) => contact.accountId)).size;
 
   return (
     <div className="space-y-5">
@@ -274,7 +372,137 @@ export function EmployeeOutreachDashboard({ section, search }: EmployeeOutreachD
       )}
 
       {section === "contacts" && (
-        <Card className="overflow-hidden shadow-none"><table className="w-full min-w-[900px] text-left text-sm"><thead className="border-b bg-slate-50 text-xs uppercase text-slate-500"><tr>{["Contact", "Account", "Role", "Status", "Priority", "Pitch angle", "Next follow-up"].map((heading) => <th key={heading} className="px-4 py-3">{heading}</th>)}</tr></thead><tbody className="divide-y">{filteredContacts.slice(0, 80).map((contact) => { const account = accounts.find((item) => item.id === contact.accountId)!; return <tr key={contact.id} className="hover:bg-slate-50"><td className="px-4 py-3 font-semibold">{contact.firstName} {contact.lastName}<p className="text-xs font-normal text-slate-500">{contact.email}</p></td><td className="px-4 py-3">{account.name}</td><td className="px-4 py-3">{contact.roleCategory}</td><td className="px-4 py-3"><Badge>{contact.outreachStatus}</Badge></td><td className="px-4 py-3"><Badge tone={priorityTone(calculateContactPriority(contact, account))}>{calculateContactPriority(contact, account)}</Badge></td><td className="px-4 py-3 text-slate-600">{contact.bestPitchAngle}</td><td className="px-4 py-3">{contact.nextFollowUpDate}</td></tr>; })}</tbody></table></Card>
+        <div className="space-y-4">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard label="Visible contacts" value={filteredContacts.length} helper={`${visibleContactAccounts} linked accounts`} />
+            <MetricCard label="High-priority buyers" value={visibleStrategicContacts} helper="Strategic or high priority" />
+            <MetricCard label="Not contacted" value={visibleUntouchedContacts} helper="Ready for first touch" />
+            <MetricCard label="Due follow-ups" value={visibleDueContacts} helper="Due today or earlier" />
+          </section>
+
+          <Card className="p-3 shadow-none">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-slate-500">Role</span>
+                <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" value={contactRole} onChange={(event) => setContactRole(event.target.value)}>
+                  <option>All</option>
+                  {[...new Set(contacts.map((contact) => contact.roleCategory))].map((role) => <option key={role}>{role}</option>)}
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-slate-500">Status</span>
+                <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" value={contactStatus} onChange={(event) => setContactStatus(event.target.value)}>
+                  <option>All</option>
+                  {[...new Set(contacts.map((contact) => contact.outreachStatus))].map((status) => <option key={status}>{status}</option>)}
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-slate-500">Priority</span>
+                <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" value={contactPriority} onChange={(event) => setContactPriority(event.target.value)}>
+                  {["All", "Strategic", "High", "Medium", "Low"].map((priority) => <option key={priority}>{priority}</option>)}
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-slate-500">Follow-up</span>
+                <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" value={contactFollowUp} onChange={(event) => setContactFollowUp(event.target.value)}>
+                  {["All", "Due today", "Overdue", "Upcoming", "No date"].map((value) => <option key={value}>{value}</option>)}
+                </select>
+              </label>
+              <div className="flex items-end">
+                <Button className="h-10 w-full" variant="outline" onClick={() => { setContactRole("All"); setContactStatus("All"); setContactPriority("All"); setContactFollowUp("All"); }}>
+                  <Filter className="h-4 w-4" /> Reset filters
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+            <Card className="overflow-hidden shadow-none">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1120px] text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>{["Contact", "Account", "Buyer type", "Status", "Priority", "Pitch angle", "Follow-up", "Actions"].map((heading) => <th key={heading} className="px-4 py-3">{heading}</th>)}</tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredContacts.slice(0, 120).map((contact) => {
+                      const account = accounts.find((item) => item.id === contact.accountId);
+                      if (!account) return null;
+                      const priority = calculateContactPriority(contact, account);
+                      return (
+                        <tr key={contact.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3">
+                            <button className="text-left font-semibold text-slate-950 hover:underline" onClick={() => setSelectedContact(contact)}>{contact.firstName} {contact.lastName}</button>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                              <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> {contact.email || "No email"}</span>
+                              <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {contact.phone || "No phone"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button className="font-medium text-slate-900 hover:underline" onClick={() => setSelectedAccount(account)}>{account.name}</button>
+                            <p className="mt-1 text-xs text-slate-500">{account.accountType} · {account.headquarters}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-slate-900">{contact.roleCategory}</p>
+                            <p className="mt-1 text-xs text-slate-500">{contact.title}</p>
+                          </td>
+                          <td className="px-4 py-3"><Badge>{contact.outreachStatus}</Badge></td>
+                          <td className="px-4 py-3"><Badge tone={priorityTone(priority)}>{priority}</Badge></td>
+                          <td className="max-w-56 px-4 py-3 text-slate-600">{contact.bestPitchAngle}</td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-slate-900">{contact.nextFollowUpDate ?? "No date"}</p>
+                            <p className="mt-1 text-xs text-slate-500">{contact.lastContactedDate ? `Last touched ${contact.lastContactedDate}` : "No touch logged"}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Button size="sm" onClick={() => draftAndLogOutreach(contact.id, "Email")}><Mail className="h-4 w-4" /> Email</Button>
+                              <Button size="sm" variant="outline" onClick={() => draftAndLogOutreach(contact.id, "LinkedIn")}><MessageSquare className="h-4 w-4" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => setSelectedContact(contact)}><ExternalLink className="h-4 w-4" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {!filteredContacts.length && (
+                      <tr><td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={8}>No contacts match the current filters.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <aside className="space-y-4">
+              <Card className="p-4 shadow-none">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <h3 className="font-semibold text-slate-950">Next best contacts</h3>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {filteredContacts.slice(0, 5).map((contact) => {
+                    const account = accounts.find((item) => item.id === contact.accountId);
+                    if (!account) return null;
+                    return (
+                      <button key={contact.id} className="block w-full rounded-lg border border-slate-200 p-3 text-left transition hover:border-slate-300 hover:bg-slate-50" onClick={() => setSelectedContact(contact)}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-950">{contact.firstName} {contact.lastName}</p>
+                          <Badge tone={priorityTone(calculateContactPriority(contact, account))}>{calculateContactPriority(contact, account)}</Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">{contact.title} · {account.name}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Card>
+
+              <Card className="border-emerald-200 bg-emerald-50 p-4 shadow-none">
+                <div className="flex items-center gap-2">
+                  <UserRound className="h-5 w-5 text-emerald-700" />
+                  <h3 className="font-semibold text-emerald-950">Contact workflow</h3>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-emerald-900">Filter to untouched high-priority buyers, open a contact, draft email, then log LinkedIn or follow-up. Imported CSV contacts appear here automatically after the research pipeline runs.</p>
+              </Card>
+            </aside>
+          </div>
+        </div>
       )}
 
       {section === "lead-queue" && (
@@ -366,6 +594,14 @@ export function EmployeeOutreachDashboard({ section, search }: EmployeeOutreachD
       )}
 
       <AccountDrawer account={selectedAccount} contacts={contacts} onClose={() => setSelectedAccount(null)} onCreateTask={(account) => window.alert(`Task queue is connected. Use Lead Queue to reach out to ${account.name}.`)} onDraftEmail={(account) => { const contact = contacts.find((item) => item.accountId === account.id); if (contact) draftAndLogOutreach(contact.id, "Email"); }} />
+      <ContactDrawer
+        contact={selectedContact}
+        account={selectedContactAccount}
+        onClose={() => setSelectedContact(null)}
+        onDraftEmail={(contact) => draftAndLogOutreach(contact.id, "Email")}
+        onLogLinkedIn={(contact) => draftAndLogOutreach(contact.id, "LinkedIn")}
+        onCreateFollowUp={(contact) => draftAndLogOutreach(contact.id, "Follow-up")}
+      />
     </div>
   );
 }
